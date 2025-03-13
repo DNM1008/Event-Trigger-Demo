@@ -1,27 +1,27 @@
-# Simple Event-Trigger categorisation using LLM and RAG demo app
+# Simple Event-Trigger Categorisation using LLM and RAG Demo App
 
 This is a simple app that tries to mimic RAG in a real life application
 
-## What is this demo is trying to solve
+## What this demo is trying to solve
 
-Suppose a business wants to better understand their customers for whatever
+Suppose a business wants to better understand its customers for whatever
 reason. They could do that through gauging the customers' interactions with
 their services. In the case of a bank, that would be the transactions that each
 and every customer makes in their daily lives.
 
 The quickest and arguably most effective way to understand those transactions
-are through the transactions content, also known as "remark", where the users
+is through the transactions content, also known as "remark", where the users
 are required to describe their transactions.
 
 ## Where do LLM and RAG come in
 
 A rule base approach arguably works. For example, if a transaction has the term
 "car payment" in it, there is a high chance that that customer is buying a car.
-However, the trouble comes when the remarks comes with complicated words. For
+However, the trouble comes when the remarks contain complicated words. For
 example, abbreviation, or words and phrases that carry different meanings
 depending on the context.
 
-That is where a LLM could come into handy as it can try to understand the
+That is where an LLM could come into handy as it can try to understand the
 context.
 
 To further help the LLM understand the context, a file which contains the
@@ -47,7 +47,7 @@ make sense of what they could mean. It will utilise the help of the dictionary
 where possible. It will replace the abbreviations with what it thinks are the
 meanings.
 
-After that, the program will prompt the LLM into matching the remark with a
+After that, the program will prompt the LLM to match the remark with a
 suitable category. The hopes is that the LLM will read the remark and the
 categories and understand them both, thus match the transactions to the suitable
 category.
