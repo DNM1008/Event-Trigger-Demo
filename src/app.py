@@ -56,11 +56,11 @@ def resolve_abbreviation_with_llm(abbreviation, context, possible_words):
     """
     # prompt = f"""
     # You are an AI that resolves abbreviations in financial transactions. Given the context:
-    # 
+    #
     # Transaction: "{context}"
-    # 
+    #
     # The abbreviation "{abbreviation}" could mean one of the following: {', '.join(possible_words)}.
-    # 
+    #
     # Which meaning is most appropriate? Reply with only the best matching word.
     # """
 
@@ -129,62 +129,64 @@ if categories_file and transactions_file:
     transactions_df = pd.read_excel(transactions_file)
     abbreviation_map = load_abbreviation_dict(abbreviation_dict_path)
 
-    st.write("### Danh mục giao dịch")
+    st.write("### Transaction Categories")
     st.dataframe(categories_df)
 
-    st.write("### Giao dịch")
+    st.write("### Transactions")
     st.dataframe(transactions_df.head())
 
-    # Lấy danh sách danh mục giao dịch
-    category_list = categories_df.iloc[:, 0].tolist()  # Lấy cột đầu tiên làm danh mục
-    category_list.append("Other")  # Thêm danh mục dự phòng
+    # Ensure category column exists
+    category_list = categories_df.iloc[:, 0].tolist()  # First column as category names
 
-    # Mở rộng từ viết tắt trong nội dung giao dịch
-    transactions_df["REMARK"] = transactions_df["REMARK"].apply(
+    # Expand abbreviations in transactions
+    transactions_df["REMARK"] = transactions_df["REMARK_CLEAN"].apply(
         lambda x: expand_abbreviations(str(x), abbreviation_map)
     )
 
-    # Tạo prompt bằng tiếng Việt
-    transactions_text = "\n".join(transactions_df["REMARK"].astype(str).tolist())
+    # Prepare prompt
+    # transactions_text = "\n".join(transactions_df["REMARK"].astype(str).tolist())
+    # prompt = f"""
+    # You are an AI trained to classify financial transactions into categories.
+    # The available categories are: {', '.join(category_list)}.
+    #
+    # Classify the following transactions into one of the categories:
+    # {transactions_text}
+    #
+    # Return the response as a JSON list of dictionaries with 'transaction' and 'category'.
+    # """
+
+    # Prepare Vietnamese prompt
+    transactions_text = "\n".join(transactions_df["REMARK_CLEAN"].astype(str).tolist())
     prompt = f"""
     Bạn là một AI có nhiệm vụ phân loại giao dịch tài chính vào các danh mục phù hợp.
     Danh mục có sẵn là: {', '.join(category_list)}.
     
-    Hãy phân loại các giao dịch sau vào một trong các danh mục trên. Nếu không có danh mục nào phù hợp, hãy gán "Other".
+    Hãy phân loại các giao dịch sau vào một trong các danh mục trên:
     {transactions_text}
     
     Trả lời dưới dạng danh sách JSON gồm các từ điển chứa 'transaction' và 'category'.
     """
 
-    # Chạy LLM để phân loại giao dịch
-    response = ollama.chat(model="mistral", messages=[{"role": "user", "content": prompt}])
+    # Run LLM classification
+    response = ollama.chat(
+        model="mistral", messages=[{"role": "user", "content": prompt}]
+    )
 
     try:
         categorized_transactions = json.loads(response["message"]["content"])
         categorized_df = pd.DataFrame(categorized_transactions)
-
-        # Đảm bảo tất cả các giao dịch có danh mục, nếu không, đặt thành "Other"
-            prompt = f"""
-    You are an AI that resolves abbreviations in financial transactions. Given the context:
-    
-    Transaction: "{context}"
-    
-    The abbreviation "{abbreviation}" could mean one of the following: {', '.join(possible_words)}.
-    
-    Which meaning is most appropriate? Reply with only the best matching word.
-    """
-        st.write("### Giao dịch đã được phân loại")
+        st.write("### Categorized Transactions")
         st.dataframe(categorized_df)
 
-        # Xuất tệp Excel
+        # Download button
         output_file = "categorized_transactions.xlsx"
         categorized_df.to_excel(output_file, index=False)
         with open(output_file, "rb") as file:
             st.download_button(
-                "Tải xuống giao dịch đã phân loại",
+                "Download Categorized Transactions",
                 file,
                 file_name=output_file,
                 mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
             )
     except Exception as e:
-        st.error(f"Không thể xử lý phản hồi từ LLM: {e}")
+        st.error(f"LLM response could not be processed: {e}")
