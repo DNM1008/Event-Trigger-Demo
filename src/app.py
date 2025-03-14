@@ -170,8 +170,32 @@ if categories_file and transactions_file:
     )
 
     try:
-        categorized_transactions = json.loads(response["message"]["content"])
-        categorized_df = pd.DataFrame(categorized_transactions)
+        response_content = response["message"]["content"]
+        categorized_transactions = json.loads(response_content)
+
+        # Check for missing transactions
+        missing_count = len(transactions_df) - len(categorized_transactions)
+
+        if missing_count > 0:
+            st.warning(
+                f"⚠️ {missing_count} transactions were not categorized. Assigning 'Uncategorized'."
+            )
+
+            # Create a DataFrame for missing transactions
+            uncategorized_rows = transactions_df.iloc[
+                len(categorized_transactions) :
+            ].copy()
+            uncategorized_rows["category"] = "Khác"
+
+            # Append missing transactions back
+            categorized_df = pd.concat(
+                [pd.DataFrame(categorized_transactions), uncategorized_rows],
+                ignore_index=True,
+            )
+        else:
+            categorized_df = pd.DataFrame(categorized_transactions)
+
+        # Display the categorized transactions
         st.write("### Categorized Transactions")
         st.dataframe(categorized_df)
 
@@ -185,5 +209,6 @@ if categories_file and transactions_file:
                 file_name=output_file,
                 mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
             )
-    except Exception as e:
-        st.error(f"LLM response could not be processed: {e}")
+
+    except json.JSONDecodeError as e:
+        st.error(f"LLM response could not be processed as JSON: {e}")
