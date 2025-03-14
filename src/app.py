@@ -21,8 +21,8 @@ def load_abbreviation_dict(file_path):
         file_path (str): path to abbreviation_dict.xlsx
 
     Returns:
-        abbreviation_map (dict): dictionary that maps the abbreviations to their
-        full words.
+        abbreviation_map (dict): dictionary that maps the abbreviations to
+        their full words.
     """
     df = pd.read_excel(file_path)
     abbreviation_map = {}
@@ -46,8 +46,8 @@ def resolve_abbreviation_with_llm(abbreviation, context, possible_words):
         abbreviation (str): the abbreviation inside the remark
         context (list of str): the words around the abbreviation, could be used
         to determine what the abbreviation stands for
-        possible_words (list of str): possible words that the abbreviation could
-        stand for
+        possible_words (list of str): possible words that the abbreviation that
+        the llm could take inspiration from
 
     Returns:
         (str): the full word that the abbreviation is most likely to
@@ -66,11 +66,13 @@ def resolve_abbreviation_with_llm(abbreviation, context, possible_words):
 
     # Prepare prompt in Vietnamese
     prompt = f"""
-    Bạn là một AI có nhiệm vụ giải thích các từ viết tắt trong giao dịch tài chính. Dưới đây là ngữ cảnh:
+    Bạn là một AI có nhiệm vụ giải thích các từ viết tắt trong giao dịch tài 
+    chính. Dưới đây là ngữ cảnh:
     
     Giao dịch: "{context}"
     
-    Từ viết tắt "{abbreviation}" có thể mang một trong các nghĩa sau: {', '.join(possible_words)}.
+    Từ viết tắt "{abbreviation}" có thể mang nghĩa nào, các từ sau có thể là 
+    gợi ý: {', '.join(possible_words)}.
     
     Nghĩa nào phù hợp nhất? Hãy trả lời chỉ bằng từ đúng nhất.
     """
@@ -156,15 +158,17 @@ if categories_file and transactions_file:
     # """
 
     # Prepare Vietnamese prompt
-    transactions_text = "\n".join(transactions_df["REMARK_CLEAN"].astype(str).tolist())
+    transactions_text =
+    "\n".join(transactions_df["REMARK_CLEAN"].astype(str).tolist())
     prompt = f"""
-    Bạn là một AI có nhiệm vụ phân loại giao dịch tài chính vào các danh mục phù hợp.
-    Danh mục có sẵn là: {', '.join(category_list)}.
+    Bạn là một AI có nhiệm vụ phân loại giao dịch tài chính vào các danh mục 
+    phù hợp. Danh mục có sẵn là: {', '.join(category_list)}.
     
     Hãy phân loại các giao dịch sau vào một trong các danh mục trên:
     {transactions_text}
     
-    Trả lời dưới dạng danh sách JSON gồm các từ điển chứa 'transaction' và 'category'.
+    Trả lời dưới dạng danh sách JSON gồm các từ điển chứa 'transaction' và 
+    'category'.
     """
 
     # Run LLM classification
