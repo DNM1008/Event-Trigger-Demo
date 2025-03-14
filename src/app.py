@@ -39,47 +39,41 @@ def load_abbreviation_dict(file_path):
 
 def resolve_abbreviation_with_llm(abbreviation, context, possible_words):
     """
-    Use LLM to match the abbreviations in the remark to possible full words
-    given the context.
+    Use LLM to infer the full form of an abbreviation given its context.
 
     Args:
-        abbreviation (str): the abbreviation inside the remark
-        context (list of str): the words around the abbreviation, could be used
-        to determine what the abbreviation stands for
-        possible_words (list of str): possible words that the abbreviation that
-        the llm could take inspiration from
+        abbreviation (str): The abbreviation in the transaction.
+        context (str): The full transaction text.
+        possible_words (list of str): Suggested full words from the dictionary.
 
     Returns:
-        (str): the full word that the abbreviation is most likely to
-        stand for
-
+        str: The most likely full word for the abbreviation.
     """
-    # prompt = f"""
-    # You are an AI that resolves abbreviations in financial transactions. Given the context:
-    #
-    # Transaction: "{context}"
-    #
-    # The abbreviation "{abbreviation}" could mean one of the following: {', '.join(possible_words)}.
-    #
-    # Which meaning is most appropriate? Reply with only the best matching word.
-    # """
-
-    # Prepare prompt in Vietnamese
     prompt = f"""
     Bạn là một AI có nhiệm vụ giải thích các từ viết tắt trong giao dịch tài 
     chính. Dưới đây là ngữ cảnh:
     
     Giao dịch: "{context}"
     
-    Từ viết tắt "{abbreviation}" có thể mang nghĩa nào, các từ sau có thể là 
-    gợi ý: {', '.join(possible_words)}.
+    Từ viết tắt "{abbreviation}" có thể mang nghĩa nào? Các từ sau có thể là 
+    gợi ý từ từ điển: {', '.join(possible_words)}.
     
-    Nghĩa nào phù hợp nhất? Hãy trả lời chỉ bằng từ đúng nhất.
+    Nếu có từ nào phù hợp hơn dựa trên ngữ cảnh, hãy sử dụng nó.
+    
+    Hãy trả lời chỉ bằng từ đúng nhất.
     """
+
     response = ollama.chat(
         model="mistral", messages=[{"role": "user", "content": prompt}]
     )
-    return response["message"]["content"].strip()
+
+    full_word = response["message"]["content"].strip()
+
+    # Fallback: If the LLM response isn't useful, pick the first suggested word
+    if full_word not in possible_words:
+        full_word = possible_words[0]
+
+    return full_word
 
 
 def expand_abbreviations(text, abbreviation_map):
@@ -158,8 +152,7 @@ if categories_file and transactions_file:
     # """
 
     # Prepare Vietnamese prompt
-    transactions_text =
-    "\n".join(transactions_df["REMARK_CLEAN"].astype(str).tolist())
+    transactions_text = "\n".join(transactions_df["REMARK_CLEAN"].astype(str).tolist())
     prompt = f"""
     Bạn là một AI có nhiệm vụ phân loại giao dịch tài chính vào các danh mục 
     phù hợp. Danh mục có sẵn là: {', '.join(category_list)}.
